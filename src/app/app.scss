@@ -1,0 +1,64 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  font-family: sans-serif;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.status label {
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.status.online label {
+  color: green;
+}
+
+.status.offline label {
+  color: red;
+}
+
+.icon {
+  font-size: 1.5rem;
+  color: gray;
+
+  &.active {
+    color: red;
+  }
+
+  &.playing {
+    color: green;
+  }
+}
+
+select {
+  flex: 1;
+  padding: 0.5rem;
+}
+
+.toggle button {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+}
+
+.record-icon,
+.play-icon {
+  font-size: 1.5rem;
+  transition: opacity 0.3s ease;
+  opacity: 0.4;
+}
+
+.record-icon.active {
+  opacity: 1;
+}
+
+.play-icon.active {
+  opacity: 1;
+}
