@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { environment } from '../environments/environment';
 import Recorder from 'opus-recorder';
+import { connect } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -128,7 +129,13 @@ export class App implements OnInit {
       return false;
     }
     this.noiseCancelledVoiceChangedAudioOutput = audioOutput;
-    this.audioContext = new AudioContext({ sampleRate: 48000 });
+    this.audioContext = new AudioContext({ sampleRate: 48000, latencyHint: 'interactive' });
+    await this.audioContext.audioWorklet.addModule('/assets/white-noise-processor.js');
+    const whiteNoiseProcessor = new AudioWorkletNode(this.audioContext, 'white-noise-processor');
+    const filter = this.audioContext.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 1000;
+    filter.Q.value = 1;
     this.micSource = this.audioContext.createMediaStreamSource(this.micStream);
     //create destination for audio output
     this.destination = this.audioContext.createMediaStreamDestination();
@@ -137,11 +144,11 @@ export class App implements OnInit {
     this.noiseCancelledVoiceChangedAudioOutput.play();
     this.isPlaying = true;
     //connect mic to speaker
-    this.micSource.connect(this.destination);
+    //this.micSource.connect(whiteNoiseProcessor).connect(filter).connect(this.destination);
     //listen to processed voice changed audio and play it to the selected speaker
     this.enableVoiceChangedPlayback(
       this.processingAudioWs);
-    //try open selected mic stream
+    //send mic audio to backend for processing
     const voiceProcessingEnabled = await this.enableVoiceProcessing(
       this.audioContext,
       this.micSource);
@@ -199,9 +206,13 @@ export class App implements OnInit {
   private async acquireMicStream(
     deviceId: string): Promise<MediaStream | Error> {
     try {
+      console.log(navigator.mediaDevices.getSupportedConstraints());
       //get selected mic stream
       return await navigator.mediaDevices.getUserMedia({
-        audio: { deviceId: { exact: deviceId } }
+        audio: {
+          deviceId: { exact: deviceId },
+          latency: { ideal: 0.01 }
+        } as MediaTrackConstraints
       });
     } catch (err) {
       return new Error("Failed to access selected microphone", { cause: err });
